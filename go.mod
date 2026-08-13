@@ -1,3 +1,3 @@
-module github.com/valayash/lld-go
+module github.com/valayash/low-level-design-go
 
 go 1.26.3

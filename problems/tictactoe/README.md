@@ -64,9 +64,61 @@ LLD is not "start typing structs." Answer these in writing, then we build it.
 
 ## Status
 
-- [ ] Design sketched
-- [ ] Types defined
-- [ ] Move validation
-- [ ] Win / draw detection
-- [ ] Tests passing (`go test ./problems/tictactoe/ -v`)
-- [ ] Follow-up: configurable `N` and `K`
+- [x] Design sketched
+- [x] Types defined
+- [x] Move validation
+- [x] Win / draw detection
+- [x] Tests passing (`go test ./problems/tictactoe/ -v`)
+- [x] Follow-up: configurable `N` and `K`
+- [x] Follow-up: three or more players
+- [ ] Follow-up: undo
+- [ ] Follow-up: computer opponent (Strategy)
+- [ ] Follow-up: concurrent-safe moves
+
+## How it fits together
+
+| File | Responsibility |
+|---|---|
+| `symbol.go` | `Symbol` — a defined type so a stray character can't be a player's sign |
+| `player.go` | `Player` — name and sign, no game state |
+| `board.go` | Grid storage, bounds/occupancy validation, line detection |
+| `game.go` | Turn order, game status, winner — the rules |
+| `errors.go` | Sentinel errors so callers can tell *why* a move failed |
+
+The split that matters: **`Board` never learns that players exist.** It takes a
+`Symbol`, not a `Player`. That's what lets `Game` own turn order without
+`Board` knowing there are two of anything — and it's why adding a third player
+changed nothing in `board.go`.
+
+`Move` runs its five steps in a fixed order, and the order *is* the design:
+
+1. Reject if the game is already over
+2. Let `Board` validate position and occupancy
+3. Check for a win — **before** the draw check
+4. Check for a draw
+5. Advance the turn, only on a valid move that didn't end the game
+
+Step 3 before step 4 is the subtle one: a final mark that fills the board *and*
+completes a line is a win, not a draw. `TestWinningMoveThatAlsoFillsBoard`
+pins that down.
+
+## Try it
+
+```go
+x := tictactoe.NewPlayer("Xavier", tictactoe.X)
+o := tictactoe.NewPlayer("Olivia", tictactoe.O)
+
+g, err := tictactoe.NewGame(3, 3, x, o)   // 3x3, three in a row wins
+if err != nil {
+    log.Fatal(err)
+}
+
+if err := g.Move(0, 0); err != nil {
+    fmt.Println("rejected:", err)
+}
+
+fmt.Print(g.Board())
+if w, ok := g.Winner(); ok {
+    fmt.Println(w, "wins")
+}
+```

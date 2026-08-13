@@ -58,22 +58,17 @@ pattern exists instead of memorizing its Java boilerplate.
 
 ### 6. Interview problems
 
-**Easy**
+- [ ] [Tic Tac Toe](problems/tictactoe)
 - [ ] Parking Lot
 - [ ] Vending Machine
-- [ ] Stack Overflow
 - [ ] Logging Framework
-- [ ] Tic Tac Toe
-
-**Medium**
+- [ ] Stack Overflow
 - [ ] ATM
 - [ ] LRU Cache
 - [ ] Elevator System
 - [ ] Splitwise
 - [ ] Hotel Management
 - [ ] Rate Limiter
-
-**Hard**
 - [ ] Ride Sharing (Uber)
 - [ ] Music Streaming (Spotify)
 - [ ] Online Shopping (Amazon)
@@ -88,7 +83,7 @@ oop/          fundamentals — structs, interfaces, embedding, polymorphism
 principles/   SOLID, DRY, KISS, YAGNI — each with a bad/ and good/ example
 patterns/     creational, structural, behavioral
 concurrency/  goroutines, channels, sync primitives
-problems/     easy, medium, hard — each a self-contained package + README
+problems/     one folder per interview problem — self-contained package + README
 ```
 
 Every directory is a Go package with a `README.md` explaining the concept, the code

@@ -59,7 +59,7 @@ pattern exists instead of memorizing its Java boilerplate.
 ### 6. Interview problems
 
 - [ ] [Tic Tac Toe](problems/tictactoe)
-- [ ] Snake and Ladder
+- [ ] [Snake and Ladder](problems/snakeandladder)
 - [ ] Parking Lot
 - [ ] Vending Machine
 - [ ] Logging Framework
@@ -67,12 +67,12 @@ pattern exists instead of memorizing its Java boilerplate.
 - [ ] ATM
 - [ ] LRU Cache
 - [ ] Elevator System
-- [ ] Splitwise
+- [ ] [Splitwise](problems/splitwise)
 - [ ] Hotel Management
 - [ ] Rate Limiter
 - [ ] Ride Sharing (Uber)
 - [ ] Music Streaming (Spotify)
-- [ ] Online Shopping (Amazon)
+- [ ] [Online Shopping Service](problems/onlineshopping)
 - [ ] Food Delivery
 
 ---

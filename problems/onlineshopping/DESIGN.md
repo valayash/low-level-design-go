@@ -1,119 +1,90 @@
 # Online Shopping Service — Design Notes
 
-A running record of the design as it is decided. Written before the code, updated as
-thinking changes. No Go in this file — types and relationships only.
+The current model. Edited in place as decisions change — this always reflects where the
+design stands now, not how it got here. No Go in this file; types and relationships only.
 
 ---
 
-## v1 — first pass at the entities
+## Entities
 
-The starting model: three entities, described as of the first design pass.
-
-![v1 entity diagram](design-v1.svg)
-
-### What each entity is for
+![entity diagram](design.svg)
 
 | Entity | Holds | Purpose |
 |---|---|---|
 | `User` | ID, name, email, their orders | Who is shopping, and their history |
-| `Order` | Order ID, the products in it, the total | A basket of products at checkout, and what it came to |
-| `Product` | ID, name, description, stock left, price | A thing that can be bought, and how many remain |
+| `Order` | Order ID, line items, total | A basket at checkout and what it came to |
+| `ProductItem` | A product, a quantity | One line: *"2 of this one"* |
+| `Product` | ID, name, description, stock, price | A thing that can be bought, and how many remain |
 
-### Decisions made so far
+## Decisions
 
-- **Order history hangs off the user.** `User.Orders` is the list of orders that user placed.
-- **The cart is the order's product list.** Rather than a separate `Cart` entity, the collection of products *is* the order.
-- **Stock lives on the product.** `Product.Inventory` is the single count of how many remain.
-- **The order stores its own total.** `CartValue` is carried on the order rather than recomputed.
-
----
-
-## v2 — line items
-
-A list of products cannot express *"2 of this one"*. A new entity sits between the order
-and the product to carry the count.
-
-![v2 entity diagram](design-v2.svg)
-
-**`ProductItem`** — a product plus how many of it. `Order.Items` is now `[]ProductItem`
-rather than `[]Product`.
-
-This closes open question 1. It does **not** close question 2: the item still points at a
-live `Product`, so price is read at display time rather than frozen at purchase time.
+- **Order history hangs off the user** — `User.Orders` is that user's orders.
+- **Line items, not bare products** — `Order.Items` is `[]ProductItem`, so quantity has a home.
+- **The order is the cart** — no separate `Cart` entity; the order's item list plays both roles.
+- **Stock lives on the product** — `Product.Inventory` is the count remaining.
+- **The order stores its own total** — `CartValue` is carried, not recomputed.
 
 ---
 
 ## Open questions
 
-Not yet decided. Each of these changes the diagram above.
+Each of these changes the diagram above.
 
-### 1. Quantity is missing — RESOLVED in v2
+### 1. Price at the time of purchase
 
-`Order.Products` is a list of products. Where does *"2 of this one"* live? A list can hold
-the same product twice, but then a cart of 30 identical items is 30 entries, and changing
-the quantity means finding and mutating a list.
+`Price` lives on `Product`, and `ProductItem` points at a live product. Buy a camera for
+£500 in January; drop its price to £400 in March; your January order now reports £400. The
+financial record changes retroactively.
 
-**Question:** does the order hold products, or does it hold *lines* — a product plus a count?
+**Q:** what must an order line *copy* rather than reference — and does `Order` get to point
+at `Product` at all?
 
-### 2. Price at the time of purchase
+### 2. Cart line vs order line
 
-A product's price is on `Product`. An order points at products. So when the price of a
-camera changes tomorrow, every past order that contains it silently reprices — the order
-history now reports figures that were never charged.
+A cart line *should* track the live price: if the camera drops while it sits in the basket,
+you want the lower price. An order line must be frozen forever. Same two fields, opposite
+requirements.
 
-**Question:** what does an order have to *copy* rather than reference, and what does that
-imply about whether `Order` can point at `Product` at all?
+**Q:** one type used two ways, or two types?
 
 ### 3. `CartValue` is derived
 
-The total is the sum of the lines. Storing it means every mutation must update it, and
-any path that forgets leaves the order lying about its own value.
+The total is the sum of the lines. Storing it means every mutation must update it, and any
+path that forgets leaves the order lying about its own value.
 
-**Question:** stored or computed? (Note: for an order, unlike a cart, there is a real
-argument for storing it — see question 2.)
+**Q:** stored or computed? (For an *order*, unlike a cart, there is a real argument for
+storing it — see question 1.)
 
-### 4. Cart and Order are the same thing here
-
-Right now there is no cart — the order *is* the cart. But a cart is mutable, belongs to a
-user, has no total until checkout, and may never become an order. An order is immutable,
-has been paid for, and has a status.
-
-**Question:** one entity or two?
-
-### 5. Nothing tracks order status
+### 4. Nothing tracks order status
 
 The requirements need `Pending → Processing → Shipped → Delivered`, plus `Cancelled`.
-Not in the model yet.
 
-**Question:** what field, what type, and what stops an illegal transition?
+**Q:** what field, what type, and what stops `Delivered → Pending`?
 
-### 6. `User.Orders` makes a cycle
+### 5. `User.Orders` makes a cycle
 
-If an order ever needs to know whose it is, `User → Order → User` is a reference cycle.
-It also means loading one user drags in their entire order history.
+If an order ever needs to know whose it is, `User → Order → User` is a reference cycle. It
+also means loading one user drags in their whole order history.
 
-**Question:** should the user hold orders, or should the order hold a user ID and a lookup
-live elsewhere?
+**Q:** does the user hold orders, or does the order hold a user ID with the lookup elsewhere?
 
-### 7. Stock on the product is the race
+### 6. Stock on the product is the race
 
-Two users check out the last unit at the same instant. Both read `Inventory == 1`, both
-decrement, and stock goes to `-1`.
+Two users check out the last unit at once. Both read `Inventory == 1`, both decrement,
+stock goes to `-1`.
 
-**Question:** what guards `Inventory`, and at what moment is stock actually taken —
-add-to-cart, checkout, or payment success?
+**Q:** what single operation is atomic, and when is stock actually taken — add-to-cart,
+checkout, or payment success? What returns it if payment then fails?
 
-### 8. The type of `money`
+### 7. The type of `money`
 
-Left deliberately abstract above. `float64` cannot represent `0.1 + 0.2` exactly.
+`float64` cannot represent `0.1 + 0.2` exactly, so totals drift and equality breaks.
 
-**Question:** what type, and in what unit?
+**Q:** what type, and in what unit?
 
----
+### 8. Payment
 
-## Changelog
+Multiple payment methods are required, and a payment can fail in ways the caller must tell
+apart — declined, insufficient funds, timeout.
 
-| Version | Change |
-|---|---|
-| v1 | Initial three entities: `User`, `Order`, `Product` |
-| v2 | Added `ProductItem` to carry quantity; `Order.Items` replaces `Order.Products` |
+**Q:** what is the interface, its one method, and what does that method return?

@@ -10,7 +10,7 @@
 
   <rect x="0" y="0" width="1080" height="470" fill="#ffffff"/>
 
-  <text x="30" y="42" font-size="19" font-weight="700" fill="#1f2328">Online Shopping Service — v2: line items</text>
+  <text x="30" y="42" font-size="19" font-weight="700" fill="#1f2328">Online Shopping Service — current model</text>
   <text x="30" y="66" font-size="13" fill="#57606a">ProductItem carries the quantity, so an order can say &#8220;2 of this one&#8221;.</text>
 
   <!-- USER -->
@@ -37,7 +37,7 @@
   <path d="M 550 152 a 8 8 0 0 1 8 -8 h 204 a 8 8 0 0 1 8 8 v 24 h -220 z" fill="#b6e3ff"/>
   <line x1="550" y1="176" x2="770" y2="176" stroke="#0969da" stroke-width="1.5"/>
   <text x="566" y="168" font-size="14" font-weight="700" fill="#0550ae">ProductItem</text>
-  <text x="748" y="168" font-size="10.5" font-weight="700" fill="#0550ae" text-anchor="end">NEW</text>
+  <text x="748" y="168" font-size="10.5" font-weight="700" fill="#0550ae" text-anchor="end"></text>
   <text x="566" y="200" font-size="12.5" font-family="ui-monospace, Menlo, monospace" fill="#1f2328">Product<tspan fill="#57606a">   *Product</tspan></text>
   <text x="566" y="224" font-size="12.5" font-family="ui-monospace, Menlo, monospace" fill="#1f2328">Quantity<tspan fill="#57606a">  int</tspan></text>
 

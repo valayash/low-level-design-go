@@ -28,11 +28,26 @@ The starting model: three entities, described as of the first design pass.
 
 ---
 
+## v2 — line items
+
+A list of products cannot express *"2 of this one"*. A new entity sits between the order
+and the product to carry the count.
+
+![v2 entity diagram](design-v2.svg)
+
+**`ProductItem`** — a product plus how many of it. `Order.Items` is now `[]ProductItem`
+rather than `[]Product`.
+
+This closes open question 1. It does **not** close question 2: the item still points at a
+live `Product`, so price is read at display time rather than frozen at purchase time.
+
+---
+
 ## Open questions
 
 Not yet decided. Each of these changes the diagram above.
 
-### 1. Quantity is missing
+### 1. Quantity is missing — RESOLVED in v2
 
 `Order.Products` is a list of products. Where does *"2 of this one"* live? A list can hold
 the same product twice, but then a cart of 30 identical items is 30 entries, and changing
@@ -101,3 +116,4 @@ Left deliberately abstract above. `float64` cannot represent `0.1 + 0.2` exactly
 | Version | Change |
 |---|---|
 | v1 | Initial three entities: `User`, `Order`, `Product` |
+| v2 | Added `ProductItem` to carry quantity; `Order.Items` replaces `Order.Products` |

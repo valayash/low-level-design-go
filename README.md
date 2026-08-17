@@ -59,6 +59,7 @@ pattern exists instead of memorizing its Java boilerplate.
 ### 6. Interview problems
 
 - [ ] [Tic Tac Toe](problems/tictactoe)
+- [ ] Snake and Ladder
 - [ ] Parking Lot
 - [ ] Vending Machine
 - [ ] Logging Framework

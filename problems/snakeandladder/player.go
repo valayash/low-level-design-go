@@ -1,4 +1,4 @@
-package SnakeAndLadder
+package snakeandladder
 
 type Player struct {
 	Name string

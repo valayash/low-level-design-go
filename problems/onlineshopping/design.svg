@@ -1,74 +1,81 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 470" width="1080" height="470" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1150 580" width="1150" height="580" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
   <defs>
-    <marker id="arrow2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#6e7781"/>
     </marker>
-    <marker id="warn2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <marker id="r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#cf222e"/>
     </marker>
   </defs>
 
-  <rect x="0" y="0" width="1080" height="470" fill="#ffffff"/>
+  <rect x="0" y="0" width="1150" height="580" fill="#ffffff"/>
 
   <text x="30" y="42" font-size="19" font-weight="700" fill="#1f2328">Online Shopping Service — current model</text>
-  <text x="30" y="66" font-size="13" fill="#57606a">ProductItem carries the quantity, so an order can say &#8220;2 of this one&#8221;.</text>
+  <text x="30" y="66" font-size="13" fill="#57606a">Cart extracted as its own entity. Order is intended to be frozen at checkout.</text>
 
   <!-- USER -->
-  <rect x="30" y="120" width="220" height="140" rx="8" fill="#ffffff" stroke="#d0d7de" stroke-width="1.5"/>
-  <path d="M 30 128 a 8 8 0 0 1 8 -8 h 204 a 8 8 0 0 1 8 8 v 24 h -220 z" fill="#ddf4ff"/>
-  <line x1="30" y1="152" x2="250" y2="152" stroke="#d0d7de" stroke-width="1.5"/>
-  <text x="46" y="144" font-size="14" font-weight="700" fill="#0550ae">User</text>
-  <text x="46" y="176" font-size="12.5" font-family="ui-monospace, Menlo, monospace" fill="#1f2328">ID<tspan fill="#57606a">        string</tspan></text>
-  <text x="46" y="200" font-size="12.5" font-family="ui-monospace, Menlo, monospace" fill="#1f2328">Name<tspan fill="#57606a">      string</tspan></text>
-  <text x="46" y="224" font-size="12.5" font-family="ui-monospace, Menlo, monospace" fill="#1f2328">Email<tspan fill="#57606a">     string</tspan></text>
-  <text x="46" y="248" font-size="12.5" font-family="ui-monospace, Menlo, monospace" fill="#1f2328">Orders<tspan fill="#57606a">    []Order</tspan></text>
+  <rect x="30" y="190" width="220" height="140" rx="8" fill="#ffffff" stroke="#d0d7de" stroke-width="1.5"/>
+  <path d="M 30 198 a 8 8 0 0 1 8 -8 h 204 a 8 8 0 0 1 8 8 v 24 h -220 z" fill="#ddf4ff"/>
+  <line x1="30" y1="222" x2="250" y2="222" stroke="#d0d7de" stroke-width="1.5"/>
+  <text x="46" y="214" font-size="14" font-weight="700" fill="#0550ae">User</text>
+  <text x="46" y="246" font-size="12.5" font-family="ui-monospace, Menlo, monospace" fill="#1f2328">ID<tspan fill="#57606a">        string</tspan></text>
+  <text x="46" y="270" font-size="12.5" font-family="ui-monospace, Menlo, monospace" fill="#1f2328">Name<tspan fill="#57606a">      string</tspan></text>
+  <text x="46" y="294" font-size="12.5" font-family="ui-monospace, Menlo, monospace" fill="#1f2328">Email<tspan fill="#57606a">     string</tspan></text>
+  <text x="46" y="318" font-size="12.5" font-family="ui-monospace, Menlo, monospace" fill="#1f2328">Orders<tspan fill="#57606a">    []Order</tspan></text>
+
+  <!-- CART -->
+  <rect x="310" y="112" width="240" height="68" rx="8" fill="#ffffff" stroke="#0969da" stroke-width="2"/>
+  <path d="M 310 120 a 8 8 0 0 1 8 -8 h 224 a 8 8 0 0 1 8 8 v 24 h -240 z" fill="#b6e3ff"/>
+  <line x1="310" y1="144" x2="550" y2="144" stroke="#0969da" stroke-width="1.5"/>
+  <text x="326" y="136" font-size="14" font-weight="700" fill="#0550ae">Cart</text>
+  <text x="534" y="136" font-size="10.5" font-weight="700" fill="#0550ae" text-anchor="end">mutable</text>
+  <text x="326" y="168" font-size="12.5" font-family="ui-monospace, Menlo, monospace" fill="#1f2328">Items<tspan fill="#57606a">  map[ID]ProductItem</tspan></text>
 
   <!-- ORDER -->
-  <rect x="290" y="132" width="220" height="116" rx="8" fill="#ffffff" stroke="#d0d7de" stroke-width="1.5"/>
-  <path d="M 290 140 a 8 8 0 0 1 8 -8 h 204 a 8 8 0 0 1 8 8 v 24 h -220 z" fill="#ddf4ff"/>
-  <line x1="290" y1="164" x2="510" y2="164" stroke="#d0d7de" stroke-width="1.5"/>
-  <text x="306" y="156" font-size="14" font-weight="700" fill="#0550ae">Order</text>
-  <text x="306" y="188" font-size="12.5" font-family="ui-monospace, Menlo, monospace" fill="#1f2328">OrderID<tspan fill="#57606a">   string</tspan></text>
-  <text x="306" y="212" font-size="12.5" font-family="ui-monospace, Menlo, monospace" fill="#1f2328">Items<tspan fill="#57606a">     []ProductItem</tspan></text>
-  <text x="306" y="236" font-size="12.5" font-family="ui-monospace, Menlo, monospace" fill="#1f2328">CartValue<tspan fill="#57606a"> money</tspan></text>
+  <rect x="310" y="300" width="240" height="116" rx="8" fill="#ffffff" stroke="#1a7f37" stroke-width="2"/>
+  <path d="M 310 308 a 8 8 0 0 1 8 -8 h 224 a 8 8 0 0 1 8 8 v 24 h -240 z" fill="#d2f8d2"/>
+  <line x1="310" y1="332" x2="550" y2="332" stroke="#1a7f37" stroke-width="1.5"/>
+  <text x="326" y="324" font-size="14" font-weight="700" fill="#0f5323">Order</text>
+  <text x="534" y="324" font-size="10.5" font-weight="700" fill="#0f5323" text-anchor="end">frozen</text>
+  <text x="326" y="356" font-size="12.5" font-family="ui-monospace, Menlo, monospace" fill="#1f2328">OrderID<tspan fill="#57606a">   string</tspan></text>
+  <text x="326" y="380" font-size="12.5" font-family="ui-monospace, Menlo, monospace" fill="#1f2328">Items<tspan fill="#57606a">     []ProductItem</tspan></text>
+  <text x="326" y="404" font-size="12.5" font-family="ui-monospace, Menlo, monospace" fill="#1f2328">CartValue<tspan fill="#57606a"> money</tspan></text>
 
   <!-- PRODUCTITEM -->
-  <rect x="550" y="144" width="220" height="92" rx="8" fill="#ffffff" stroke="#0969da" stroke-width="2"/>
-  <path d="M 550 152 a 8 8 0 0 1 8 -8 h 204 a 8 8 0 0 1 8 8 v 24 h -220 z" fill="#b6e3ff"/>
-  <line x1="550" y1="176" x2="770" y2="176" stroke="#0969da" stroke-width="1.5"/>
-  <text x="566" y="168" font-size="14" font-weight="700" fill="#0550ae">ProductItem</text>
-  <text x="748" y="168" font-size="10.5" font-weight="700" fill="#0550ae" text-anchor="end"></text>
-  <text x="566" y="200" font-size="12.5" font-family="ui-monospace, Menlo, monospace" fill="#1f2328">Product<tspan fill="#57606a">   *Product</tspan></text>
-  <text x="566" y="224" font-size="12.5" font-family="ui-monospace, Menlo, monospace" fill="#1f2328">Quantity<tspan fill="#57606a">  int</tspan></text>
+  <rect x="630" y="214" width="220" height="92" rx="8" fill="#ffffff" stroke="#d0d7de" stroke-width="1.5"/>
+  <path d="M 630 222 a 8 8 0 0 1 8 -8 h 204 a 8 8 0 0 1 8 8 v 24 h -220 z" fill="#ddf4ff"/>
+  <line x1="630" y1="246" x2="850" y2="246" stroke="#d0d7de" stroke-width="1.5"/>
+  <text x="646" y="238" font-size="14" font-weight="700" fill="#0550ae">ProductItem</text>
+  <text x="646" y="270" font-size="12.5" font-family="ui-monospace, Menlo, monospace" fill="#1f2328">Product<tspan fill="#57606a">   *Product</tspan></text>
+  <text x="646" y="294" font-size="12.5" font-family="ui-monospace, Menlo, monospace" fill="#1f2328">Quantity<tspan fill="#57606a">  int</tspan></text>
 
   <!-- PRODUCT -->
-  <rect x="810" y="108" width="240" height="164" rx="8" fill="#ffffff" stroke="#d0d7de" stroke-width="1.5"/>
-  <path d="M 810 116 a 8 8 0 0 1 8 -8 h 224 a 8 8 0 0 1 8 8 v 24 h -240 z" fill="#ddf4ff"/>
-  <line x1="810" y1="140" x2="1050" y2="140" stroke="#d0d7de" stroke-width="1.5"/>
-  <text x="826" y="132" font-size="14" font-weight="700" fill="#0550ae">Product</text>
-  <text x="826" y="164" font-size="12.5" font-family="ui-monospace, Menlo, monospace" fill="#1f2328">ID<tspan fill="#57606a">          string</tspan></text>
-  <text x="826" y="188" font-size="12.5" font-family="ui-monospace, Menlo, monospace" fill="#1f2328">Name<tspan fill="#57606a">        string</tspan></text>
-  <text x="826" y="212" font-size="12.5" font-family="ui-monospace, Menlo, monospace" fill="#1f2328">Description<tspan fill="#57606a"> string</tspan></text>
-  <text x="826" y="236" font-size="12.5" font-family="ui-monospace, Menlo, monospace" fill="#1f2328">Inventory<tspan fill="#57606a">   int</tspan></text>
-  <text x="826" y="260" font-size="12.5" font-family="ui-monospace, Menlo, monospace" fill="#1f2328">Price<tspan fill="#57606a">       money</tspan></text>
+  <rect x="890" y="178" width="230" height="164" rx="8" fill="#ffffff" stroke="#d0d7de" stroke-width="1.5"/>
+  <path d="M 890 186 a 8 8 0 0 1 8 -8 h 214 a 8 8 0 0 1 8 8 v 24 h -230 z" fill="#ddf4ff"/>
+  <line x1="890" y1="210" x2="1120" y2="210" stroke="#d0d7de" stroke-width="1.5"/>
+  <text x="906" y="202" font-size="14" font-weight="700" fill="#0550ae">Product</text>
+  <text x="906" y="234" font-size="12.5" font-family="ui-monospace, Menlo, monospace" fill="#1f2328">ID<tspan fill="#57606a">          string</tspan></text>
+  <text x="906" y="258" font-size="12.5" font-family="ui-monospace, Menlo, monospace" fill="#1f2328">Name<tspan fill="#57606a">        string</tspan></text>
+  <text x="906" y="282" font-size="12.5" font-family="ui-monospace, Menlo, monospace" fill="#1f2328">Description<tspan fill="#57606a"> string</tspan></text>
+  <text x="906" y="306" font-size="12.5" font-family="ui-monospace, Menlo, monospace" fill="#1f2328">Inventory<tspan fill="#57606a">   int</tspan></text>
+  <text x="906" y="330" font-size="12.5" font-family="ui-monospace, Menlo, monospace" fill="#1f2328">Price<tspan fill="#57606a">       money</tspan></text>
 
   <!-- ARROWS -->
-  <line x1="250" y1="190" x2="283" y2="190" stroke="#6e7781" stroke-width="1.8" marker-end="url(#arrow2)"/>
-  <text x="266" y="181" font-size="11" font-weight="600" fill="#1f2328" text-anchor="middle">places</text>
+  <path d="M 250 240 C 280 240, 280 150, 303 148" stroke="#6e7781" stroke-width="1.8" fill="none" marker-end="url(#a)"/>
+  <text x="252" y="176" font-size="11" font-weight="600" fill="#1f2328">has</text>
 
-  <line x1="510" y1="190" x2="543" y2="190" stroke="#6e7781" stroke-width="1.8" marker-end="url(#arrow2)"/>
-  <text x="526" y="181" font-size="11" font-weight="600" fill="#1f2328" text-anchor="middle">has</text>
+  <path d="M 250 290 C 280 290, 280 355, 303 357" stroke="#6e7781" stroke-width="1.8" fill="none" marker-end="url(#a)"/>
+  <text x="248" y="345" font-size="11" font-weight="600" fill="#1f2328">places</text>
 
-  <line x1="770" y1="190" x2="803" y2="190" stroke="#cf222e" stroke-width="1.8" marker-end="url(#warn2)"/>
-  <text x="786" y="181" font-size="11" font-weight="600" fill="#cf222e" text-anchor="middle">refs</text>
+  <path d="M 550 150 C 590 152, 595 232, 623 240" stroke="#6e7781" stroke-width="1.8" fill="none" marker-end="url(#a)"/>
+  <path d="M 550 358 C 590 356, 595 288, 623 280" stroke="#6e7781" stroke-width="1.8" fill="none" marker-end="url(#a)"/>
 
-  <!-- OPEN QUESTION -->
-  <rect x="290" y="300" width="760" height="130" rx="8" fill="#fff8c5" stroke="#d4a72c" stroke-width="1.5" stroke-dasharray="6 4"/>
-  <text x="308" y="324" font-size="13" font-weight="700" fill="#7d4e00">Still open — the red arrow</text>
-  <text x="308" y="350" font-size="12.5" fill="#4d2d00">ProductItem points at a live Product, so <tspan font-weight="600">Price is read at display time, not purchase time</tspan>.</text>
-  <text x="308" y="372" font-size="12.5" fill="#4d2d00">Change the camera&#8217;s price today and every past order silently reprices itself.</text>
-  <text x="308" y="398" font-size="12.5" fill="#4d2d00"><tspan font-weight="600">Q:</tspan> does an order line hold a pointer, or a copied ProductID + UnitPrice frozen at checkout?</text>
-  <text x="308" y="420" font-size="12.5" fill="#4d2d00"><tspan font-weight="600">Q:</tspan> is a cart line the same type as an order line? A cart <tspan font-style="italic">should</tspan> track the current price.</text>
+  <line x1="850" y1="260" x2="883" y2="260" stroke="#cf222e" stroke-width="1.8" marker-end="url(#r)"/>
 
-  <line x1="786" y1="236" x2="786" y2="296" stroke="#d4a72c" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#arrow2)"/>
+  <!-- WARNING -->
+  <rect x="310" y="452" width="810" height="106" rx="8" fill="#ffebe9" stroke="#cf222e" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <text x="328" y="476" font-size="13" font-weight="700" fill="#a40e26">&#8220;Frozen&#8221; is not frozen yet — the red arrow</text>
+  <text x="328" y="500" font-size="12.5" fill="#6e0b18">Order.Items holds ProductItem, which points at a <tspan font-weight="600">live *Product</tspan>. Price is still read</text>
+  <text x="328" y="520" font-size="12.5" fill="#6e0b18">through that pointer, so a past order reprices the moment the catalogue changes.</text>
+  <text x="328" y="546" font-size="12.5" fill="#6e0b18"><tspan font-weight="600">Q:</tspan> what does the order line have to <tspan font-style="italic">copy</tspan> for the freeze to be real?</text>
 </svg>

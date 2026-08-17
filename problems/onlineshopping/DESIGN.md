@@ -12,15 +12,20 @@ design stands now, not how it got here. No Go in this file; types and relationsh
 | Entity | Holds | Purpose |
 |---|---|---|
 | `User` | ID, name, email, their orders | Who is shopping, and their history |
-| `Order` | Order ID, line items, total | A basket at checkout and what it came to |
+| `Cart` | Line items, keyed by product | The mutable basket before checkout |
+| `Order` | Order ID, line items, total | A frozen record of what was bought |
 | `ProductItem` | A product, a quantity | One line: *"2 of this one"* |
 | `Product` | ID, name, description, stock, price | A thing that can be bought, and how many remain |
 
 ## Decisions
 
-- **Order history hangs off the user** — `User.Orders` is that user's orders.
-- **Line items, not bare products** — `Order.Items` is `[]ProductItem`, so quantity has a home.
-- **The order is the cart** — no separate `Cart` entity; the order's item list plays both roles.
+- **Cart is its own entity**, separate from `Order`. A cart is mutable and may never become
+  an order; an order is a completed record.
+- **Cart holds items keyed by product**, so the same product cannot occupy two lines and
+  changing a quantity is a direct lookup rather than a scan.
+- **Order is frozen at checkout** — once placed, it does not change.
+- **Line items, not bare products** — quantity lives on `ProductItem`.
+- **Order history hangs off the user** — `User.Orders`.
 - **Stock lives on the product** — `Product.Inventory` is the count remaining.
 - **The order stores its own total** — `CartValue` is carried, not recomputed.
 
@@ -28,43 +33,46 @@ design stands now, not how it got here. No Go in this file; types and relationsh
 
 ## Open questions
 
-Each of these changes the diagram above.
+### 1. The freeze is not actually a freeze
 
-### 1. Price at the time of purchase
+`Order` is declared frozen, but `Order.Items` holds `ProductItem`, which points at a live
+`*Product`. Price is read through that pointer every time it is displayed. Buy a camera for
+£500 in January, drop its price to £400 in March, and the January order reports £400.
 
-`Price` lives on `Product`, and `ProductItem` points at a live product. Buy a camera for
-£500 in January; drop its price to £400 in March; your January order now reports £400. The
-financial record changes retroactively.
+Immutability of the *order* does not help when the data it needs lives somewhere mutable.
 
-**Q:** what must an order line *copy* rather than reference — and does `Order` get to point
-at `Product` at all?
+**Q:** what must the order line copy for the freeze to be real — and once it copies that,
+does it still need the pointer?
 
-### 2. Cart line vs order line
+### 2. One line type or two
 
-A cart line *should* track the live price: if the camera drops while it sits in the basket,
-you want the lower price. An order line must be frozen forever. Same two fields, opposite
-requirements.
+The cart and the order both hold `ProductItem`, but they want opposite behaviour:
 
-**Q:** one type used two ways, or two types?
+- A **cart** line *should* track the live price. If the camera drops while it sits in the
+  basket, the shopper pays the lower price.
+- An **order** line must never move.
+
+**Q:** does one type serve both, or does checkout convert a cart line into a different type?
 
 ### 3. `CartValue` is derived
 
-The total is the sum of the lines. Storing it means every mutation must update it, and any
-path that forgets leaves the order lying about its own value.
+The total is the sum of the lines. Storing it means every mutation must update it. On a
+mutable `Cart` that is a real hazard; on a frozen `Order` it is closer to the *point* — a
+stored total is one more thing the freeze protects.
 
-**Q:** stored or computed? (For an *order*, unlike a cart, there is a real argument for
-storing it — see question 1.)
+**Q:** computed on `Cart`, stored on `Order`?
 
 ### 4. Nothing tracks order status
 
-The requirements need `Pending → Processing → Shipped → Delivered`, plus `Cancelled`.
+`Pending → Processing → Shipped → Delivered`, plus `Cancelled`.
 
-**Q:** what field, what type, and what stops `Delivered → Pending`?
+**Q:** what field, what type, and what stops `Delivered → Pending`? Note this sits awkwardly
+with "an order is frozen" — status is the one thing that must still change.
 
 ### 5. `User.Orders` makes a cycle
 
-If an order ever needs to know whose it is, `User → Order → User` is a reference cycle. It
-also means loading one user drags in their whole order history.
+If an order needs to know whose it is, `User → Order → User` is a cycle. It also means
+loading one user drags in their entire order history.
 
 **Q:** does the user hold orders, or does the order hold a user ID with the lookup elsewhere?
 
@@ -73,8 +81,8 @@ also means loading one user drags in their whole order history.
 Two users check out the last unit at once. Both read `Inventory == 1`, both decrement,
 stock goes to `-1`.
 
-**Q:** what single operation is atomic, and when is stock actually taken — add-to-cart,
-checkout, or payment success? What returns it if payment then fails?
+**Q:** what single operation is atomic, and when is stock taken — add-to-cart, checkout, or
+payment success? What returns it if payment then fails?
 
 ### 7. The type of `money`
 
@@ -84,7 +92,7 @@ checkout, or payment success? What returns it if payment then fails?
 
 ### 8. Payment
 
-Multiple payment methods are required, and a payment can fail in ways the caller must tell
-apart — declined, insufficient funds, timeout.
+Multiple methods are required, and a payment fails in ways the caller must tell apart —
+declined, insufficient funds, timeout.
 
 **Q:** what is the interface, its one method, and what does that method return?

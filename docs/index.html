@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Snake and Ladder — Go in WebAssembly</title>
+<style>
+  :root {
+    --bg:         #f4f5f7;
+    --surface:    #ffffff;
+    --border:     #d8dce3;
+    --text:       #1c2024;
+    --muted:      #5d6772;
+    --accent:     #2f5fd0;
+    --accent-fg:  #ffffff;
+    --log-bg:     #fbfbfd;
+    --ladder:     #16794a;
+    --ladder-bg:  #e6f5ec;
+    --snake:      #b3261e;
+    --snake-bg:   #fdeceb;
+    --toobig:     #8a6100;
+    --toobig-bg:  #fdf3dd;
+    --win:        #4b2fa8;
+    --win-bg:     #eeeaff;
+    --shadow:     0 1px 3px rgba(16, 22, 32, .10);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:         #14171b;
+      --surface:    #1c2126;
+      --border:     #333b44;
+      --text:       #e6e9ed;
+      --muted:      #9aa5b1;
+      --accent:     #6f9bff;
+      --accent-fg:  #0f1215;
+      --log-bg:     #12161a;
+      --ladder:     #59d99b;
+      --ladder-bg:  #16301f;
+      --snake:      #ff8f85;
+      --snake-bg:   #341b19;
+      --toobig:     #e8c05a;
+      --toobig-bg:  #322914;
+      --win:        #b7a4ff;
+      --win-bg:     #241f3d;
+      --shadow:     0 1px 3px rgba(0, 0, 0, .4);
+    }
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    padding: 1.5rem 1rem 3rem;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+    overflow-x: hidden;
+  }
+
+  .wrap { max-width: 46rem; margin: 0 auto; }
+
+  h1 { font-size: 1.5rem; margin: 0 0 .4rem; letter-spacing: -.01em; }
+
+  .lede { color: var(--muted); margin: 0 0 1.5rem; font-size: .95rem; }
+  .lede code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: .85em;
+    background: var(--log-bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: .05em .35em;
+  }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem;
+    box-shadow: var(--shadow);
+    margin-bottom: 1rem;
+  }
+
+  .panel h2 {
+    font-size: .75rem;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--muted);
+    margin: 0 0 .75rem;
+    font-weight: 600;
+  }
+
+  .player-row { display: flex; gap: .5rem; align-items: center; margin-bottom: .5rem; }
+
+  .player-row input {
+    flex: 1 1 auto;
+    min-width: 0;
+    font: inherit;
+    font-size: .95rem;
+    padding: .45rem .6rem;
+    color: var(--text);
+    background: var(--log-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+  }
+  .player-row input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  button {
+    font: inherit;
+    font-size: .9rem;
+    cursor: pointer;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    padding: .45rem .7rem;
+  }
+  button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+
+  .remove-btn { flex: 0 0 auto; width: 2.2rem; padding: .45rem 0; line-height: 1; }
+
+  .actions { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin-top: .75rem; }
+
+  .primary {
+    background: var(--accent);
+    color: var(--accent-fg);
+    border-color: var(--accent);
+    font-weight: 600;
+    padding: .5rem 1.1rem;
+  }
+  .primary:hover:not(:disabled) { color: var(--accent-fg); filter: brightness(1.08); }
+
+  .status { font-size: .85rem; color: var(--muted); }
+
+  #log {
+    background: var(--log-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: .6rem .75rem;
+    height: 26rem;
+    overflow: auto;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: .82rem;
+    line-height: 1.55;
+    white-space: pre;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  #log .line { display: block; padding: 0 .3rem; border-radius: 3px; min-height: 1.2em; }
+  #log .ladder { color: var(--ladder); background: var(--ladder-bg); font-weight: 600; }
+  #log .snake  { color: var(--snake);  background: var(--snake-bg);  font-weight: 600; }
+  #log .toobig { color: var(--toobig); background: var(--toobig-bg); }
+  #log .win    { color: var(--win);    background: var(--win-bg);    font-weight: 700; }
+  #log .empty  { color: var(--muted); }
+
+  .legend { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .6rem; font-size: .75rem; }
+  .legend span { padding: .1rem .45rem; border-radius: 4px; }
+  .legend .ladder { color: var(--ladder); background: var(--ladder-bg); }
+  .legend .snake  { color: var(--snake);  background: var(--snake-bg); }
+  .legend .toobig { color: var(--toobig); background: var(--toobig-bg); }
+  .legend .win    { color: var(--win);    background: var(--win-bg); }
+
+  footer { color: var(--muted); font-size: .8rem; margin-top: 1.5rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 30rem) {
+    #log { height: 20rem; font-size: .75rem; }
+    h1 { font-size: 1.25rem; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Snake and Ladder</h1>
+  <p class="lede">
+    This is real Go, compiled to WebAssembly and running in your browser — the
+    identical <code>snakeandladder</code> package the CLI runs, unmodified. The game
+    still prints its turns to stdout with <code>fmt.Printf</code>; the page captures
+    that stream and renders it below.
+  </p>
+
+  <div class="panel">
+    <h2>Players</h2>
+    <div id="players"></div>
+    <div class="actions">
+      <button type="button" id="add">+ Add player</button>
+      <button type="button" id="play" class="primary" disabled>Play game</button>
+      <span class="status" id="status">Loading WebAssembly module…</span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Game output</h2>
+    <div id="log" role="log" aria-live="polite"><span class="line empty">Press “Play game” to run a match.</span></div>
+    <div class="legend">
+      <span class="ladder">ladder</span>
+      <span class="snake">snake</span>
+      <span class="toobig">roll too big</span>
+      <span class="win">game won</span>
+    </div>
+  </div>
+
+  <footer>
+    Built with <code>GOOS=js GOARCH=wasm go build</code>. Source:
+    <a href="https://github.com/valayash/low-level-design-go">valayash/low-level-design-go</a>
+  </footer>
+</div>
+
+<script src="wasm_exec.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  var MAX_PLAYERS = 6;
+  var MIN_PLAYERS = 2;
+  var DEFAULT_NAMES = ["Alice", "Bob", "Carol", "Dave", "Erin", "Frank"];
+
+  var playersEl = document.getElementById("players");
+  var addBtn    = document.getElementById("add");
+  var playBtn   = document.getElementById("play");
+  var statusEl  = document.getElementById("status");
+  var logEl     = document.getElementById("log");
+
+  /* ---------- player inputs ---------- */
+
+  function rows() {
+    return Array.prototype.slice.call(playersEl.querySelectorAll(".player-row"));
+  }
+
+  function syncControls() {
+    var n = rows().length;
+    addBtn.disabled = n >= MAX_PLAYERS;
+    rows().forEach(function (row) {
+      row.querySelector(".remove-btn").disabled = n <= MIN_PLAYERS;
+    });
+  }
+
+  function addPlayer(name) {
+    if (rows().length >= MAX_PLAYERS) return;
+
+    var row = document.createElement("div");
+    row.className = "player-row";
+
+    var input = document.createElement("input");
+    input.type = "text";
+    input.value = name || DEFAULT_NAMES[rows().length] || "Player";
+    input.setAttribute("aria-label", "Player name");
+    input.maxLength = 24;
+
+    var remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "remove-btn";
+    remove.textContent = "✕";
+    remove.title = "Remove this player";
+    remove.setAttribute("aria-label", "Remove player");
+    remove.addEventListener("click", function () {
+      if (rows().length <= MIN_PLAYERS) return;
+      row.remove();
+      syncControls();
+    });
+
+    row.appendChild(input);
+    row.appendChild(remove);
+    playersEl.appendChild(row);
+    syncControls();
+  }
+
+  function names() {
+    var out = [];
+    rows().forEach(function (row, i) {
+      var v = row.querySelector("input").value.trim();
+      out.push(v === "" ? "Player " + (i + 1) : v);
+    });
+    // NewGame does `% len(g.Players)`, so never hand it an empty slice.
+    return out.length ? out : ["Alice", "Bob"];
+  }
+
+  addPlayer("Alice");
+  addPlayer("Bob");
+  addBtn.addEventListener("click", function () { addPlayer(); });
+
+  /* ---------- capture Go's stdout ---------- */
+
+  function classify(line) {
+    if (line.indexOf("Game Won") !== -1) return "line win";
+    if (line.indexOf("ladder")   !== -1) return "line ladder";
+    if (line.indexOf("snake")    !== -1) return "line snake";
+    if (line.indexOf("too big")  !== -1) return "line toobig";
+    return "line";
+  }
+
+  var pending = "";
+  var decoder = new TextDecoder("utf-8");
+
+  function appendLine(text) {
+    var el = document.createElement("span");
+    el.className = classify(text);
+    // A blank line still needs to occupy a row.
+    el.textContent = text === "" ? " " : text;
+    logEl.appendChild(el);
+  }
+
+  function clearLog() {
+    pending = "";
+    logEl.textContent = "";
+  }
+
+  // wasm_exec.js installs globalThis.fs with a writeSync that console.logs each
+  // completed line; its write() delegates to this.writeSync, so replacing
+  // writeSync alone captures everything Go prints. Must happen after the script
+  // loads and before the module is instantiated.
+  globalThis.fs.writeSync = function (fd, buf) {
+    pending += decoder.decode(buf, { stream: true });
+    var nl = pending.lastIndexOf("\n");
+    if (nl !== -1) {
+      pending.substring(0, nl).split("\n").forEach(appendLine);
+      pending = pending.substring(nl + 1);
+    }
+    return buf.length;
+  };
+
+  /* ---------- load and run the module ---------- */
+
+  var go = new Go();
+
+  function boot() {
+    var load = WebAssembly.instantiateStreaming
+      ? WebAssembly.instantiateStreaming(fetch("snakeandladder.wasm"), go.importObject)
+      : fetch("snakeandladder.wasm")
+          .then(function (r) { return r.arrayBuffer(); })
+          .then(function (b) { return WebAssembly.instantiate(b, go.importObject); });
+
+    return load.then(function (result) {
+      // Do NOT await: main() blocks on `select {}` so the run promise never
+      // resolves. exports.run executes synchronously up to that block, which is
+      // where playGame gets registered.
+      go.run(result.instance);
+
+      if (typeof globalThis.playGame !== "function") {
+        throw new Error("playGame was not exported by the wasm module");
+      }
+
+      playBtn.disabled = false;
+      statusEl.textContent = "Ready.";
+    }).catch(function (err) {
+      statusEl.textContent = "Failed to load WebAssembly: " + err.message;
+      console.error(err);
+    });
+  }
+
+  playBtn.addEventListener("click", function () {
+    playBtn.disabled = true;
+    addBtn.disabled = true;
+    statusEl.textContent = "Running…";
+    clearLog();
+
+    // Yield so the browser paints the "Running…" state first — playGame is
+    // synchronous and does not return until someone wins. A timer rather than
+    // requestAnimationFrame, so a backgrounded tab still runs the game.
+    setTimeout(function () {
+      try {
+        globalThis.playGame(names());
+        statusEl.textContent = "Done.";
+      } catch (err) {
+        statusEl.textContent = "Error: " + err.message;
+        console.error(err);
+      } finally {
+        playBtn.disabled = false;
+        syncControls();
+        // Scroll to the result once the appended lines are laid out.
+        logEl.scrollTop = logEl.scrollHeight;
+        requestAnimationFrame(function () {
+          logEl.scrollTop = logEl.scrollHeight;
+        });
+      }
+    }, 20);
+  });
+
+  boot();
+})();
+</script>
+</body>
+</html>

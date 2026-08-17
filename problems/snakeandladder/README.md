@@ -98,6 +98,32 @@ This is dependency injection, and it's the single most valuable idea in this pro
 
 ---
 
+## Run it in the browser
+
+The same package also runs as a web page — real Go compiled to WebAssembly, executing
+the identical code the CLI runs. No game logic is changed for the browser: `Play()` still
+prints with `fmt.Printf`, and the page captures stdout by overriding the `fs.writeSync`
+shim that `wasm_exec.js` installs.
+
+The page lives in [`docs/`](../../docs/) at the repo root, which is the directory GitHub
+Pages serves from.
+
+```sh
+# build the wasm binary and copy Go's JS support file
+GOOS=js GOARCH=wasm go build -o docs/snakeandladder.wasm ./problems/snakeandladder/wasm
+cp "$(go env GOROOT)/lib/wasm/wasm_exec.js" docs/wasm_exec.js
+
+# serve it locally (a file:// URL will not work — wasm needs a real HTTP origin)
+cd docs && python3 -m http.server 8000
+# then open http://localhost:8000
+```
+
+The wasm entry point is `wasm/main_js.go`, which exports a global `playGame(names)` to
+JavaScript. Its sibling `wasm/main_notjs.go` is an inverse-tagged stub so that
+`go build ./...` on a normal host does not fail with "build constraints exclude all Go files".
+
+---
+
 ## Status
 
 - [ ] Design sketched

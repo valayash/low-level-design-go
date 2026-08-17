@@ -3,96 +3,130 @@
 The current model. Edited in place as decisions change — this always reflects where the
 design stands now, not how it got here. No Go in this file; types and relationships only.
 
+Structure aligned with the reference solution in
+[awesome-low-level-design](https://github.com/ashishps1/awesome-low-level-design/tree/main/solutions/golang/onlineshoppingservice),
+with the deviations listed at the bottom.
+
 ---
 
 ## Entities
 
 ![entity diagram](design.svg)
 
-| Entity | Holds | Purpose |
-|---|---|---|
-| `User` | ID, name, email, their orders | Who is shopping, and their history |
-| `Cart` | Line items, keyed by product | The mutable basket before checkout |
-| `Order` | Order ID, line items, total | A frozen record of what was bought |
-| `ProductItem` | A product, a quantity | One line: *"2 of this one"* |
-| `Product` | ID, name, description, stock, price | A thing that can be bought, and how many remain |
+| Type | Kind | Holds | Purpose |
+|---|---|---|---|
+| `OnlineShoppingService` | service | `Users`, `Products`, `Orders` maps | Owns the registries; runs checkout |
+| `User` | entity | ID, name, email, password, orders | Who is shopping |
+| `Product` | entity | ID, name, description, price, quantity | A sellable thing and its stock |
+| `ShoppingCart` | entity | `items map[productID]OrderItem` | The mutable basket before checkout |
+| `OrderItem` | value | product, quantity | One line: *"2 of this one"* |
+| `Order` | entity | ID, user, items, total, status | The record of a completed purchase |
+| `OrderStatus` | enum | Pending, Processing, Shipped, Delivered, Cancelled | Where an order is in its lifecycle |
+| `Payment` | interface | `ProcessPayment(amount)` | Swappable payment method |
+| `CreditCardPayment` | impl | — | One concrete method |
+
+## Layers
+
+- **Service** — verbs that span entities. `PlaceOrder` touches inventory, orders, cart and
+  payment, so it belongs to none of them.
+- **Entities** — nouns that own only rules about themselves. `Product` knows whether it has
+  stock; `ShoppingCart` knows how to merge a duplicate line.
+
+The three maps stand in for a database: `s.Products[id] = p` is an `INSERT`, and
+`s.Products[id]` is a `SELECT ... WHERE id = ?`.
 
 ## Decisions
 
-- **Cart is its own entity**, separate from `Order`. A cart is mutable and may never become
-  an order; an order is a completed record.
-- **Cart holds items keyed by product**, so the same product cannot occupy two lines and
-  changing a quantity is a direct lookup rather than a scan.
-- **Order is frozen at checkout** — once placed, it does not change.
-- **Line items, not bare products** — quantity lives on `ProductItem`.
-- **Order history hangs off the user** — `User.Orders`.
-- **Stock lives on the product** — `Product.Inventory` is the count remaining.
-- **The order stores its own total** — `CartValue` is carried, not recomputed.
+- **One line type, `OrderItem`, shared by cart and order.** The cart stores it keyed by
+  product ID so duplicates merge rather than creating two lines.
+- **`Order` is created by a constructor** that computes the total and sets `Pending`. It is
+  never assembled field by field.
+- **Status is an enum**, not a string, so an invalid status cannot be typed.
+- **Payment is an interface** with one method, so a new method is a new type rather than a
+  new `switch` branch.
+- **Service is a singleton**, holding the only copies of users, products and orders.
+- **Order history is stored twice** — on `User.Orders` and in `Service.Orders`.
+
+## What the checkout does, in order
+
+```
+for each cart line:  if stock available  →  deduct it
+if nothing available →  error
+create the Order (status Pending), store it, append to user, clear the cart
+take payment
+  success →  status Processing
+  failure →  status Cancelled, put all the stock back
+```
 
 ---
 
 ## Open questions
 
-### 1. The freeze is not actually a freeze
+These are places the reference makes a choice worth arguing with. Each is still undecided
+for our version.
 
-`Order` is declared frozen, but `Order.Items` holds `ProductItem`, which points at a live
-`*Product`. Price is read through that pointer every time it is displayed. Buy a camera for
-£500 in January, drop its price to £400 in March, and the January order reports £400.
+### 1. Money is `float64` in the reference
 
-Immutability of the *order* does not help when the data it needs lives somewhere mutable.
+`0.1 + 0.2 != 0.3`. Totals accumulate error, and equality comparisons on money stop working.
 
-**Q:** what must the order line copy for the freeze to be real — and once it copies that,
-does it still need the pointer?
+**Q:** integer minor units instead — and if so, what unit, and where does conversion happen?
 
-### 2. One line type or two
+### 2. The freeze is not real
 
-The cart and the order both hold `ProductItem`, but they want opposite behaviour:
+`OrderItem` holds `*Product`, so a line's price is read live from the catalogue. `TotalAmount`
+*is* snapshotted at construction, so the total is stable — but the line items it was
+computed from are not. Change a price and an order's total no longer equals the sum of its
+own lines.
 
-- A **cart** line *should* track the live price. If the camera drops while it sits in the
-  basket, the shopper pays the lower price.
-- An **order** line must never move.
+**Q:** does `OrderItem` copy `ProductID` and `UnitPrice` instead of holding a pointer?
 
-**Q:** does one type serve both, or does checkout convert a cart line into a different type?
+### 3. Order history lives in two places
 
-### 3. `CartValue` is derived
+`user.AddOrder(*order)` appends a **copy** of the order, while `s.Orders[id]` keeps the
+pointer. `SetStatus` afterwards mutates the pointer only, so the user's own history keeps
+whatever status it was copied with.
 
-The total is the sum of the lines. Storing it means every mutation must update it. On a
-mutable `Cart` that is a real hazard; on a frozen `Order` it is closer to the *point* — a
-stored total is one more thing the freeze protects.
+**Q:** one home for orders — the registry, with `OrdersFor(userID)` as a query?
 
-**Q:** computed on `Cart`, stored on `Order`?
+### 4. The stock race is unguarded
 
-### 4. Nothing tracks order status
+`IsAvailable(n)` then `UpdateQuantity(-n)` is check-then-act with no lock. Two checkouts
+both see the last unit and both take it.
 
-`Pending → Processing → Shipped → Delivered`, plus `Cancelled`.
+**Q:** what single operation is atomic, and who holds the mutex?
 
-**Q:** what field, what type, and what stops `Delivered → Pending`? Note this sits awkwardly
-with "an order is frozen" — status is the one thing that must still change.
+### 5. Partial orders happen silently
 
-### 5. `User.Orders` makes a cycle
+Unavailable lines are skipped, and the order is placed with whatever was in stock. The
+customer is charged for less than they asked for and is never told.
 
-If an order needs to know whose it is, `User → Order → User` is a cycle. It also means
-loading one user drags in their entire order history.
+**Q:** all-or-nothing, or partial with an explicit report of what was dropped?
 
-**Q:** does the user hold orders, or does the order hold a user ID with the lookup elsewhere?
+### 6. Payment runs after the cart is cleared and the order is stored
 
-### 6. Stock on the product is the race
+If payment fails, the order is already in the registry and the basket is already empty. The
+customer loses their cart on a declined card.
 
-Two users check out the last unit at once. Both read `Inventory == 1`, both decrement,
-stock goes to `-1`.
+**Q:** what is the correct order of operations, and what happens if the process dies between
+deducting stock and refunding it?
 
-**Q:** what single operation is atomic, and when is stock taken — add-to-cart, checkout, or
-payment success? What returns it if payment then fails?
+### 7. `ProcessPayment` returns `bool`
 
-### 7. The type of `money`
+Declined, insufficient funds, and a network timeout are different problems — one is the
+customer's, one is retryable, one is neither.
 
-`float64` cannot represent `0.1 + 0.2` exactly, so totals drift and equality breaks.
+**Q:** does it return an `error` so callers can tell them apart?
 
-**Q:** what type, and in what unit?
+### 8. The singleton is not thread-safe
 
-### 8. Payment
+`if instance == nil` is itself a race, in the type responsible for handling concurrency.
+It also makes every test share one catalogue.
 
-Multiple methods are required, and a payment fails in ways the caller must tell apart —
-declined, insufficient funds, timeout.
+**Q:** `sync.Once`, or inject the service so tests get a fresh one?
 
-**Q:** what is the interface, its one method, and what does that method return?
+### 9. Order IDs collide
+
+The reference builds them as `"ORDER-" + user.ID`, so a user's second order overwrites their
+first in the registry.
+
+**Q:** what generates a unique order ID?

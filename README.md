@@ -74,6 +74,7 @@ pattern exists instead of memorizing its Java boilerplate.
 - [ ] Music Streaming (Spotify)
 - [ ] [Online Shopping Service](problems/onlineshopping)
 - [ ] Food Delivery
+- [ ] [Car Auction](problems/auction)
 
 ---
 
